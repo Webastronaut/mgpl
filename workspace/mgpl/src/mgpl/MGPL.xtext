@@ -1,0 +1,55 @@
+grammar mgpl.MGPL hidden(WS, COMMENT) //with org.eclipse.xtext.common.Terminals
+
+generate mGPL "http://www.MGPL.mgpl"
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+// ### MGPL-Grammatik
+
+Prog		: 'game' name=IDF
+				'(' (attr+=AttrAss (',' attr+=AttrAss)*)? ')' 
+				declarations+=Decl* 
+				init=StmtBlock 
+				blocks+=Block*;
+Decl		: (VarDecl | ObjDecl) ';';
+VarDecl		: type='int' name=IDF (init=Init? | {ArrayDecl.variable=current} '[' length=NUMBER ']');
+Init		: '=' Expr;
+ObjDecl		: type=ObjType name=IDF ('(' (attr+=AttrAss (',' attr+=AttrAss)*)? ')' | {ArrayDecl.variable=current} '[' length=NUMBER ']');
+				// ArrayDecl{variable=Decl{type=rectangle name=bullets} [ length=5 ] ; }
+				//def isArray(Var it) { id.eContainer instanceof ArrayDecl }
+ObjType		: 'rectangle' | 'triangle' | 'circle';
+AttrAss		: name=IDF '=' value=Expr;
+Block		: AnimBlock | EventBlock;
+				// animation' IDF '(' objType IDF ')' stmtBlock
+AnimBlock	: 'animation' name=IDF '(' param=ParamDecl ')' stmtBlock=StmtBlock;
+ParamDecl	: type=ObjType name=IDF;
+EventBlock	: 'on' keyStroke=KeyStroke stmtBlock=StmtBlock;
+KeyStroke	: 'space' | 'leftarrow' | 'rightarrow' | 'uparrow' | 'downarrow';
+// {StmtBlock} damit wird erreicht, dass diese Instanz auch dann erstellt wird, wenn kein Feature gesetzt wird
+StmtBlock 	: {StmtBlock} '{' stmts+=Stmt* '}';
+Stmt		: IfStmt | ForStmt | AssStmt ';';
+IfStmt		: 'if' '(' condition=Expr ')' thenBlock=StmtBlock ('else' elseBlock=StmtBlock )? ;
+ForStmt		: 'for' '(' init=AssStmt ';' condition=Expr ';' loop=AssStmt ')' stmtBlock=StmtBlock;
+AssStmt		: variable=Var '=' expression=Expr;
+AllDecls	: (Prog | Decl | AnimBlock | ParamDecl);
+
+Var			: id=[AllDecls|IDF]
+				//id=IDF
+				({ElementSelect.variable=current} '[' index=Expr ']')?
+				({MemberSelect.variable=current} '.' memberName=IDF)?;
+				
+Expr		: DisjExpr;
+DisjExpr returns Expr	: ConjExpr ({Or.left=current} '||' right=ConjExpr)*;
+ConjExpr returns Expr	: RelExpr ({And.left=current} '&&' right=RelExpr)*;
+RelExpr returns Expr	: AddExpr (({Equals.left=current} '==' | {Less.left=current} '<' | {LessOrEquals.left=current} '<=') right=AddExpr)*;
+AddExpr returns Expr	: MultExpr (({Plus.left=current} '+' | {Minus.left=current} '-') right=MultExpr)*;
+MultExpr returns Expr	: UnaryExpr (({Divide.left=current} '/' | {Times.left=current} '*') right=UnaryExpr)*;
+UnaryExpr returns Expr	: ({Negation} '-' | {Complement} '!') expr=UnaryExpr | PrimExpr;
+PrimExpr returns Expr	: {NumberLiteral} value=NUMBER | Var ({Touches.left=current} 'touches' right=Var)? | '(' Expr ')';
+
+// Lexer section
+terminal IDF		: ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*;
+terminal NUMBER returns ecore::EInt	: '0'..'9'+;
+terminal COMMENT 	: '//' !('\n'|'\r')*;
+terminal WS			: (' '|'\t'|'\r'|'\n')+;
+terminal ANY_OTHER	: .;

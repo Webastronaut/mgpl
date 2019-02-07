@@ -1,0 +1,25 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: mgpl.ui
+Bundle-Vendor: My Company
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: mgpl.ui; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: mgpl,
+ mgpl.ide,
+ org.eclipse.xtext.ui,
+ org.eclipse.xtext.ui.shared,
+ org.eclipse.xtext.ui.codetemplates.ui,
+ org.eclipse.ui.editors;bundle-version="3.5.0",
+ org.eclipse.ui.ide;bundle-version="3.5.0",
+ org.eclipse.ui,
+ org.eclipse.compare,
+ org.eclipse.xtext.builder,
+ org.eclipse.xtend.lib;bundle-version="2.14.0";resolution:=optional,
+ org.eclipse.xtext.xbase.lib;bundle-version="2.14.0"
+Import-Package: org.apache.log4j
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: mgpl.ui.quickfix,
+ mgpl.ui.internal,
+ mgpl.ui.contentassist
+Bundle-Activator: mgpl.ui.internal.MgplActivator
